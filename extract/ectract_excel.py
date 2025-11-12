@@ -1,45 +1,21 @@
 import pandas as pd
-import os
+from pathlib import Path    
 from datetime import datetime
 
-EXCEL_PATH='data/raw/satisfaction_2016.xlsx'
+RAW_DIR = Path(__file__).parent.parent / "raw_data"
+EXTRACTED_DIR = Path(__file__).parent.parent / "extracted_data"     
 
-RAW_DATA_DIR='data/raw/sarifaction_2016'
-PROCESSED_DATA_DIR='data/processed/satisfaction_2016'       
-
-def extract_excel_sheets(excel_path=EXCEL_PATH,
-                         raw_data_dir=RAW_DATA_DIR,
-                         processed_data_dir=PROCESSED_DATA_DIR):
-    """
-    Extracts sheets from an Excel file and saves them as CSV files.
+def run_extract():
+    """Extract data from raw Excel files and save as CSV."""
+    excel_files = RAW_DIR.glob("*.xlsx")
     
-    Parameters:
-    - excel_path: Path to the Excel file.
-    - raw_data_dir: Directory to save raw CSV files.
-    - processed_data_dir: Directory to save processed CSV files.
-    """
-    
-    # Create directories if they don't exist
-    os.makedirs(raw_data_dir, exist_ok=True)
-    os.makedirs(processed_data_dir, exist_ok=True)
-    
-    # Read the Excel file
-    xls = pd.ExcelFile(excel_path)
-    
-    # Iterate through each sheet in the Excel file
-    for sheet_name in xls.sheet_names:
-        # Read the sheet into a DataFrame
-        df = pd.read_excel(xls, sheet_name=sheet_name)
+    for excel_file in excel_files:
+        df = pd.read_excel(excel_file)
         
-        # Save raw data
-        raw_file_path = os.path.join(raw_data_dir, f"{sheet_name}_raw.csv")
-        df.to_csv(raw_file_path, index=False)
+        # Create a timestamped filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_filename = f"{excel_file.stem}_extracted_{timestamp}.csv"
+        output_path = EXTRACTED_DIR / output_filename
         
-        # Process data (example: drop duplicates)
-        processed_df = df.drop_duplicates()
-        
-        # Save processed data
-        processed_file_path = os.path.join(processed_data_dir, f"{sheet_name}_processed.csv")
-        processed_df.to_csv(processed_file_path, index=False)
-        
-        print(f"Extracted and processed sheet: {sheet_name}")
+        df.to_csv(output_path, index=False)
+        print(f"Extracted data saved to {output_path}")
