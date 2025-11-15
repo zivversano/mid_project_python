@@ -1,0 +1,10 @@
+{
+  // Point VS Code to the project's virtual environment python executable
+  "python.defaultInterpreterPath": "/home/local_admin/NAYA/mid_project_python/.venv/bin/python",
+  "python.pythonPath": "/home/local_admin/NAYA/mid_project_python/.venv/bin/python",
+  // help Pylance find project modules
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  // keep type checking at a friendly level
+"python.analysis.typeCheckingMode": "basic",
+"python-envs.pythonProjects": []
+}
