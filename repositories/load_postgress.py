@@ -38,4 +38,16 @@ def run_load(parquet_file: str, table_name: str = "satisfaction_curated"):
     engine = get_postgres_engine()
 
     # Load the DataFrame into the specified table in PostgreSQL
-    df.to_sql(table_name, engine, if_exists='replace', index=False)
+    try:
+        df.to_sql(table_name, engine, if_exists='replace', index=False)
+    except Exception as e:
+        # Common cause: database not reachable (e.g., local Postgres not running)
+        err_msg = str(e)
+        print("Failed to write to Postgres:", err_msg)
+        print("Make sure Postgres is running and the connection environment variables are set:")
+        print("  POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB")
+        print("If you don't have a Postgres instance available for local development, you can:")
+        print("  - run Postgres locally (docker run -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres)")
+        print("  - or skip loading by not running the ETL load step")
+        import sys
+        sys.exit(1)

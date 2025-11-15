@@ -4,6 +4,13 @@ from models.hospital import get_hospital_name
 
 def run_transform(parquet_files,curated_dir="data/curated"):
     Path(curated_dir).mkdir(parents=True, exist_ok=True)
+    # Some input parquet files may be 'values' mapping sheets which should not
+    # be concatenated with the main data. Filter out any files whose name
+    # contains 'values' to avoid mixing mapping tables into the row-wise concat.
+    parquet_files = [f for f in parquet_files if 'values' not in str(f).lower()]
+    if not parquet_files:
+        raise ValueError("No data parquet files provided to transform (all inputs were filtered out).")
+
     dfs=[pd.read_parquet(f) for f in parquet_files]
     df=pd.concat(dfs,ignore_index=True)
 
