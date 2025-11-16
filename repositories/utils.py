@@ -3,14 +3,12 @@ import yaml
 import os
 from dotenv import load_dotenv
 
-def load_config(config_path="config/config.yaml"):
-    with open(config_path,"r",encoding="utf-8") as f:
-        return yaml.safe_load(f)
+
 def load_env():
     load_dotenv()
     return {
         "POSTGRES_USER": os.getenv("POSTGRES_USER"),
-        "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "POSTGRES_PASSWORD": os.getenv("ziv2405!"),
         "POSTGRES_HOST": os.getenv("POSTGRES_HOST"),
         "POSTGRES_PORT": os.getenv("POSTGRES_PORT"),
         "POSTGRES_DB": os.getenv("POSTGRES_DB"),

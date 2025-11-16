@@ -27,7 +27,7 @@ def get_postgres_engine():
 	  - POSTGRES_DB (postgres)
 	"""
 	user = os.getenv("POSTGRES_USER", "user")
-	password = os.getenv("POSTGRES_PASSWORD", "password")
+	password = os.getenv("POSTGRES_PASSWORD", "ziv2405!")
 	host = os.getenv("POSTGRES_HOST", "localhost")
 	port = os.getenv("POSTGRES_PORT", "5432")
 	db = os.getenv("POSTGRES_DB", "postgres")

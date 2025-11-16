@@ -1,7 +1,8 @@
 import pandas as pd
-from repositories.utils import normalize_columns
+from typing import Dict
 
-def apply_mapping(df:pd.DataFrame,mapping:dict)->pd.DataFrame:
+
+def apply_mapping(df: pd.DataFrame, mapping: Dict) -> pd.DataFrame:
     """Apply value mappings to the DataFrame based on the provided mapping dictionary."""
     for column, map_dict in mapping.items():
         if column in df.columns:

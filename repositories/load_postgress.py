@@ -1,25 +1,47 @@
 import pandas as pd
 from sqlalchemy import create_engine
-from repositories.utils import load_env
+import os
+from dotenv import load_dotenv
 
-def load_postgres(parquet_path:str,table_name:str):
-    """Load data from a parquet file into a PostgreSQL database table."""
-    # Load environment variables
-    env = load_env()
-    user = env["POSTGRES_USER"]
-    password = env["POSTGRES_PASSWORD"]
-    host = env["POSTGRES_HOST"]
-    port = env["POSTGRES_PORT"]
-    db = env["POSTGRES_DB"]
+# Load environment variables
+load_dotenv()
 
-    # Create database connection string
-    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
-    engine = create_engine(conn_str)
 
-    # Read parquet file into DataFrame
-    df = pd.read_parquet(parquet_path)
+def get_postgres_engine():
+    """
+    Return a SQLAlchemy engine for PostgreSQL using environment variables:
+    POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB.
+    Defaults provided for local development.
+    """
+    user = os.getenv("POSTGRES_USER", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "password")
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db = os.getenv("POSTGRES_DB", "postgres")
+    
+    connection_string = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    return create_engine(connection_string)
 
-    # Load DataFrame into PostgreSQL table
+
+def load_postgres(parquet_file_path: str, table_name: str = "satisfaction_data"):
+    """
+    Load data from a parquet file into PostgreSQL.
+    
+    Args:
+        parquet_file_path: Path to the parquet file
+        table_name: Name of the table to create/replace in PostgreSQL
+    """
+    print(f"Loading data from {parquet_file_path} to PostgreSQL table '{table_name}'...")
+    
+    # Read the parquet file
+    df = pd.read_parquet(parquet_file_path)
+    print(f"Read {len(df)} rows from parquet file")
+    
+    # Get the database engine
+    engine = get_postgres_engine()
+    
+    # Load data to PostgreSQL (replace if table exists)
     with engine.connect() as connection:
-        df.to_sql(table_name, con=connection, if_exists='replace', index=False)
-    print(f"Data loaded into table '{table_name}' in PostgreSQL database '{db}'.")
+        df.to_sql(table_name, connection, if_exists='replace', index=False)
+    
+    print(f"Successfully loaded {len(df)} rows to table '{table_name}'")
