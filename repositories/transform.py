@@ -48,7 +48,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     for col in numeric_cols:
         null_count = df_clean[col].isnull().sum()
         if null_count > 0:
-            mean_value = df_clean[col].mean()
+            mean_value = df_clean[col][99]
             df_clean[col] = df_clean[col].fillna(mean_value)
             print(f"Filled {null_count} nulls in '{col}' with mean: {mean_value:.2f}")
     

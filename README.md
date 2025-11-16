@@ -17,24 +17,98 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure Database
+### 2. Set Up PostgreSQL Database
 
-Copy the environment template and configure with your PostgreSQL credentials:
+You have two options for running PostgreSQL:
+
+#### Option A: Docker Container (Recommended for Development)
+
+The easiest way to get started is using the included Docker Compose setup:
 
 ```bash
-cp .env.example .env
-# Edit .env with your PostgreSQL connection details
-cat .env
+# Start PostgreSQL container (creates 'satisfaction' database automatically)
+bash scripts/start_postgres.sh
+
+# The container runs on port 5433 to avoid conflicts with system PostgreSQL
+# Credentials: postgres/devpass, database: satisfaction
 ```
 
-Example `.env`:
+The `.env` file is already configured for the Docker setup:
 ```
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
+POSTGRES_PASSWORD=devpass
 POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=postgres
+POSTGRES_PORT=5433
+POSTGRES_DB=satisfaction
 ```
+
+**Container management:**
+```bash
+# View logs
+docker compose logs postgres
+
+# Stop container
+docker compose stop postgres
+
+# Start existing container
+docker compose start postgres
+
+# Remove container and data
+docker compose down -v
+```
+
+**Web Interface (pgAdmin):**
+
+Access the database through a web browser:
+1. Start pgAdmin: `docker compose up -d pgadmin`
+2. Open browser: http://localhost:8080
+3. Login credentials:
+   - Email: `admin@admin.com`
+   - Password: `admin`
+4. Add server connection:
+   - Right-click "Servers" → Register → Server
+   - General tab: Name = `midproj-postgres`
+   - Connection tab:
+     - Host: `midproj-postgres` (container name)
+     - Port: `5432` (internal port)
+     - Database: `satisfaction`
+     - Username: `postgres`
+     - Password: `devpass`
+   - Save password: Yes
+5. Navigate to: Servers → midproj-postgres → Databases → satisfaction → Schemas → public → Tables
+
+**Query data in pgAdmin:**
+- Right-click `satisfaction_2016_cleaned` → View/Edit Data → All Rows
+- Or use Query Tool to run SQL
+
+#### Option B: System PostgreSQL
+
+If you prefer using a local PostgreSQL installation:
+
+1. Ensure PostgreSQL is installed and running:
+   ```bash
+   sudo systemctl status postgresql
+   sudo systemctl start postgresql  # if not running
+   ```
+
+2. Create the database:
+   ```bash
+   # Using the init script (requires correct password in .env)
+   bash scripts/init_db.sh
+   
+   # Or manually with sudo
+   sudo -u postgres psql -c "CREATE DATABASE satisfaction;"
+   sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'yourpassword';"
+   ```
+
+3. Update `.env` with your credentials:
+   ```
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=yourpassword
+   POSTGRES_HOST=localhost
+   POSTGRES_PORT=5432
+   POSTGRES_DB=satisfaction
+   ```
 
 ### 3. Run the ETL Pipeline
 
@@ -213,6 +287,23 @@ pip install pandas openpyxl pyarrow sqlalchemy psycopg2-binary
 **Cause:** PostgreSQL server is not running or connection details are wrong.
 
 **Solution:**
+
+For Docker container (recommended):
+```bash
+# Start the container
+bash scripts/start_postgres.sh
+
+# Check container status
+docker ps | grep midproj-postgres
+
+# View logs
+docker compose logs postgres
+
+# Test connection
+PGPASSWORD=devpass psql -U postgres -h localhost -p 5433 -d satisfaction -c "SELECT 1;"
+```
+
+For system PostgreSQL:
 ```bash
 # Check if PostgreSQL is running
 sudo systemctl status postgresql
@@ -220,12 +311,24 @@ sudo systemctl status postgresql
 # Start PostgreSQL (Linux)
 sudo systemctl start postgresql
 
-# Or use Docker
-docker run -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
-
 # Verify connection
-psql -U postgres -h localhost -d postgres -c "SELECT 1;"
+PGPASSWORD=yourpassword psql -U postgres -h localhost -p 5432 -d satisfaction -c "SELECT 1;"
 ```
+
+### Docker Port Conflict (Address Already in Use)
+
+**Cause:** Port 5432 is already in use by system PostgreSQL.
+
+**Solution:**
+The `docker-compose.yml` is configured to use port 5433 on the host to avoid conflicts. Ensure your `.env` has:
+```
+POSTGRES_PORT=5433
+```
+
+If you need to change ports:
+1. Edit `docker-compose.yml` ports mapping (e.g., `"5434:5432"`)
+2. Update `POSTGRES_PORT` in `.env` to match
+3. Restart: `docker compose down && bash scripts/start_postgres.sh`
 
 ### ImportError: Missing optional dependency 'openpyxl'
 
