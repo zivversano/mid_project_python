@@ -3,7 +3,7 @@ from repositories.extract import extract_data_to_parquet
 from repositories.utils import normalize_columns
 from repositories.load_postgress import load_postgres
 from repositories.transform import clean_data, apply_mapping
-from models.mappings import SATISFACTION_MAPPINGS
+from models.mapping import satisfaction_mapping
 
 def main():
     # Extract - reads satisfaction_2016 data file and saves to output directory

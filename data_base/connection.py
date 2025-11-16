@@ -21,7 +21,7 @@ def get_postgres_engine():
 
 	Environment variables (with defaults):
 	  - POSTGRES_USER (user)
-	  - POSTGRES_PASSWORD (password)
+	  - POSTGRES_PASSWORD (ziv2405!)
 	  - POSTGRES_HOST (localhost)
 	  - POSTGRES_PORT (5432)
 	  - POSTGRES_DB (postgres)
