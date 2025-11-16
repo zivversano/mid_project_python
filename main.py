@@ -21,7 +21,7 @@ def main():
     print(f"Cleaned data: {len(cleaned_data_df)} rows")
     
     # Apply mapping
-    mapped_data_df = apply_mapping(cleaned_data_df, SATISFACTION_MAPPINGS)
+    mapped_data_df = apply_mapping(cleaned_data_df, satisfaction_mapping)
     print(f"Applied mapping to data")
     
     # Convert all object columns to string to avoid parquet type issues

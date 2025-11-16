@@ -2,13 +2,13 @@ import pandas as pd
 from typing import Dict
 
 
-def apply_mapping(df: pd.DataFrame, mapping: Dict) -> pd.DataFrame:
+def apply_mapping(df: pd.DataFrame, satisfaction_mapping: Dict) -> pd.DataFrame:
     """
-  
+    Apply provided mapping dictionaries to columns; unmapped values are preserved.
     """
     df_copy = df.copy()
     
-    for column, map_dict in mapping.items():
+    for column, map_dict in satisfaction_mapping.items():
         if column in df_copy.columns:
             # Apply mapping, keeping original values for unmapped items
             df_copy[column] = df_copy[column].map(map_dict).fillna(df_copy[column])

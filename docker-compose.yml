@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16
+    container_name: midproj-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: satisfaction
+    ports:
+      - "5433:5432"  # host port 5433 to avoid conflict with existing local Postgres on 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 10
+      start_period: 5s
+      timeout: 3s
+volumes:
+  pgdata:
