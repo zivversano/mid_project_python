@@ -1,53 +1,25 @@
-"""Load a parquet file into Postgres.
+import pandas as pd
+from sqlalchemy import create_engine
+from repositories.utils import load_env
 
-This module ensures the project root is on sys.path so local packages
-like `data_base` can be imported even when the script is executed by
-absolute path (e.g. `/path/to/.venv/bin/python repositories/load_postgress.py`).
-"""
+def load_postgres(parquet_path:str,table_name:str):
+    """Load data from a parquet file into a PostgreSQL database table."""
+    # Load environment variables
+    env = load_env()
+    user = env["POSTGRES_USER"]
+    password = env["POSTGRES_PASSWORD"]
+    host = env["POSTGRES_HOST"]
+    port = env["POSTGRES_PORT"]
+    db = env["POSTGRES_DB"]
 
-from pathlib import Path
-import sys
-ROOT = Path(__file__).resolve().parents[1]
-# Ensure project root is first on sys.path so `import data_base` works
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+    # Create database connection string
+    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
+    engine = create_engine(conn_str)
 
-try:
-    import pandas as pd
-except ModuleNotFoundError:
-    raise ModuleNotFoundError(
-        "Missing dependency 'pandas'. Run using the project venv: .venv/bin/python repositories/load_postgress.py"
-    )
+    # Read parquet file into DataFrame
+    df = pd.read_parquet(parquet_path)
 
-try:
-    from data_base.connection import get_postgres_engine
-except ModuleNotFoundError:
-    raise ModuleNotFoundError(
-        "Could not import 'data_base.connection'. Make sure you run the script from the project root or use the project's python:\n"
-        ".venv/bin/python repositories/load_postgress.py"
-    )
-
-def run_load(parquet_file: str, table_name: str = "satisfaction_curated"):
-    """
-    Load the curated parquet file into a PostgreSQL database table.
-    """
-    # Read the parquet file into a DataFrame
-    df = pd.read_parquet(parquet_file)
-
-    # Get the database engine
-    engine = get_postgres_engine()
-
-    # Load the DataFrame into the specified table in PostgreSQL
-    try:
-        df.to_sql(table_name, engine, if_exists='replace', index=False)
-    except Exception as e:
-        # Common cause: database not reachable (e.g., local Postgres not running)
-        err_msg = str(e)
-        print("Failed to write to Postgres:", err_msg)
-        print("Make sure Postgres is running and the connection environment variables are set:")
-        print("  POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB")
-        print("If you don't have a Postgres instance available for local development, you can:")
-        print("  - run Postgres locally (docker run -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres)")
-        print("  - or skip loading by not running the ETL load step")
-        import sys
-        sys.exit(1)
+    # Load DataFrame into PostgreSQL table
+    with engine.connect() as connection:
+        df.to_sql(table_name, con=connection, if_exists='replace', index=False)
+    print(f"Data loaded into table '{table_name}' in PostgreSQL database '{db}'.")
