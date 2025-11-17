@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (override OS env to ensure .env takes precedence)
+load_dotenv(override=True)
 
 
 def get_postgres_engine():

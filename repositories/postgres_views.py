@@ -40,7 +40,8 @@ def create_readable_view(
     The base table remains unchanged; the view presents readable headers.
     """
     engine = get_postgres_engine()
-    with engine.connect() as conn:
+    # Use a transactional block to ensure DDL is committed
+    with engine.begin() as conn:
         # fetch existing column names in order
         # Build a safe literal for the table name (controlled by our code)
         cols_sql = f"""
@@ -69,4 +70,12 @@ def create_readable_view(
         """
         conn.exec_driver_sql(ddl)
 
-        print(f"Created/updated view '{view_name}' with {len(cols)} columns")
+    # Separate connection to confirm visibility after commit
+    with engine.connect() as verify_conn:
+        verify_sql = f"""
+            SELECT count(*)
+            FROM information_schema.views
+            WHERE table_schema='public' AND table_name = '{view_name}'
+        """
+        count = verify_conn.exec_driver_sql(verify_sql).scalar_one_or_none()
+        print(f"Created/updated view '{view_name}' with {len(cols)} columns; visible: {bool(count)}")

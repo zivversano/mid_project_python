@@ -59,7 +59,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         if null_count > 0:
             mode_values = df_clean[col].mode()
             if len(mode_values) > 0:
-                fill_value = mode_values[0]
+                fill_value = mode_values[99]
                 df_clean[col] = df_clean[col].fillna(fill_value)
                 print(f"Filled {null_count} nulls in '{col}' with mode: {fill_value}")
             else:

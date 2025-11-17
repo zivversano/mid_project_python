@@ -6,6 +6,7 @@ from repositories.transform import clean_data, apply_mapping
 from repositories.metadata import build_question_metadata
 from repositories.postgres_views import create_readable_view
 from models.mapping import satisfaction_mapping
+from models.question_texts import build_question_header_map
 from models.hospital_scores import compute_hospital_scores, save_hospital_scores_csv
 
 def main():
@@ -37,6 +38,17 @@ def main():
     mapped_data_df.to_parquet(output_cleaned_path, index=False)
     print(f"Saved cleaned data to {output_cleaned_path}")
 
+    # Also produce a CSV with Hebrew headers for question columns, for convenience
+    print("\n=== GENERATING READABLE HEADERS CSV ===")
+    try:
+        rename_map = build_question_header_map(list(mapped_data_df.columns), include_code=True)
+        readable_df = mapped_data_df.rename(columns=rename_map)
+        readable_csv_path = 'data/output/cleaned_data_readable_headers.csv'
+        readable_df.to_csv(readable_csv_path, index=False)
+        print(f"Saved readable-headers CSV to {readable_csv_path}")
+    except Exception as hdr_err:
+        print(f"Warning: Failed to generate readable-headers CSV: {hdr_err}")
+
     # Compute per-hospital averages and overall average
     print("\n=== AGGREGATING HOSPITAL SCORES ===")
     try:
@@ -62,6 +74,8 @@ def main():
         load_postgres(output_qmeta_path, table_name='question_texts')
         # Load aggregated hospital scores CSV
         load_postgres_csv('data/output/hospital_scores.csv', table_name='hospital_scores')
+        # Note: The readable headers CSV is not loaded to Postgres due to column name length limits
+        # Use the CSV file directly or the vw_satisfaction_readable view instead
         # Create a readable view with aliased column headers
         create_readable_view(
             source_table='satisfaction_2016_cleaned',

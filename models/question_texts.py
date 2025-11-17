@@ -4,7 +4,8 @@ Mapping from base question numbers to full Hebrew question text.
 Source: data/raw/satisfaction_2016_2_20251112_200630.xlsx (sheet 'גיליון2').
 Generated automatically on demand from the values/info sheet.
 """
-from typing import Optional, Dict
+from typing import Optional, Dict, List
+import re
 
 QUESTION_TEXTS: Dict[int, str] = {
     3: "אנא דרג/י את שביעות רצונך הכללית מהאשפוז במחלקה על סולם של 1 עד 10, כאשר 10 פירושו מצוין ו 1 - פירושו גרוע",
@@ -47,3 +48,44 @@ QUESTION_TEXTS: Dict[int, str] = {
 def get_question_text(qnum: int) -> Optional[str]:
     """Return the Hebrew question text for a given base question number, if available."""
     return QUESTION_TEXTS.get(int(qnum))
+
+
+def build_question_header_map(columns: List[str], include_code: bool = True, max_length: int = 60) -> Dict[str, str]:
+    """Build a rename map from q* columns to Hebrew question texts.
+
+    - columns: a list of column names to inspect.
+    - include_code: when True, append the original code in brackets to ensure uniqueness
+      (e.g., "...השאלה בעברית [q3_g]").
+    - max_length: maximum length for the text portion before adding the code suffix.
+
+    Only columns starting with 'q' followed by digits are considered. Others are ignored.
+    The function ensures unique target names by appending the original column code if needed.
+    """
+    rename_map: Dict[str, str] = {}
+    seen: set = set()
+    pattern = re.compile(r"^q(\d+)(.*)$")
+
+    for col in columns:
+        m = pattern.match(col)
+        if not m:
+            continue
+        num = int(m.group(1))
+        text = QUESTION_TEXTS.get(num)
+        if not text:
+            continue
+        # Trim text to max_length to avoid Postgres column name length issues
+        short_text = text[:max_length] if len(text) > max_length else text
+        if include_code:
+            target = f"{short_text}... [{col}]"
+        else:
+            target = short_text
+        # ensure uniqueness if somehow duplicates occur
+        counter = 1
+        original_target = target
+        while target in seen:
+            target = f"{original_target}_{counter}"
+            counter += 1
+        seen.add(target)
+        rename_map[col] = target
+
+    return rename_map
