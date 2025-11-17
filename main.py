@@ -1,3 +1,7 @@
+import argparse
+import os
+import subprocess
+import sys
 import pandas as pd
 from repositories.extract import extract_data_to_parquet
 from repositories.utils import normalize_columns
@@ -90,4 +94,32 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Satisfaction ETL Pipeline")
+    parser.add_argument(
+        "--install-deps",
+        action="store_true",
+        help="Install Python dependencies from requirements.txt using the current interpreter",
+    )
+    parser.add_argument(
+        "--requirements",
+        default="requirements.txt",
+        help="Path to requirements.txt (default: requirements.txt)",
+    )
+    args = parser.parse_args()
+
+    if args.install_deps:
+        req_path = args.requirements
+        print(f"Installing dependencies from {req_path} with interpreter: {sys.executable}")
+        if not os.path.exists(req_path):
+            print(f"Error: requirements file not found at {req_path}")
+            sys.exit(1)
+        try:
+            # Use the current interpreter to run pip for consistent environment install
+            subprocess.run([sys.executable, "-m", "pip", "install", "-r", req_path], check=True)
+            print("Dependencies installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install dependencies (exit code {e.returncode}).")
+            sys.exit(e.returncode)
+
+    # Run the ETL pipeline
     main()
