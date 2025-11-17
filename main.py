@@ -1,9 +1,12 @@
 import pandas as pd
 from repositories.extract import extract_data_to_parquet
 from repositories.utils import normalize_columns
-from repositories.load_postgress import load_postgres
+from repositories.load_postgress import load_postgres, load_postgres_csv
 from repositories.transform import clean_data, apply_mapping
+from repositories.metadata import build_question_metadata
+from repositories.postgres_views import create_readable_view
 from models.mapping import satisfaction_mapping
+from models.hospital_scores import compute_hospital_scores, save_hospital_scores_csv
 
 def main():
     # Extract - reads satisfaction_2016 data file and saves to output directory
@@ -33,12 +36,38 @@ def main():
     output_cleaned_path = 'data/output/cleaned_data.parquet'
     mapped_data_df.to_parquet(output_cleaned_path, index=False)
     print(f"Saved cleaned data to {output_cleaned_path}")
+
+    # Compute per-hospital averages and overall average
+    print("\n=== AGGREGATING HOSPITAL SCORES ===")
+    try:
+        hospital_scores_df = compute_hospital_scores(mapped_data_df, hospital_col="code_hospital")
+        hospital_scores_csv = 'data/output/hospital_scores.csv'
+        save_hospital_scores_csv(hospital_scores_df, hospital_scores_csv)
+        print(f"Saved hospital scores to {hospital_scores_csv} ({len(hospital_scores_df)} hospitals)")
+    except Exception as agg_err:
+        print(f"Warning: Failed to compute hospital scores: {agg_err}")
+    
+    # Build and save question metadata (mapping question codes to human-readable texts)
+    print("\n=== BUILDING QUESTION METADATA ===")
+    qmeta_df = build_question_metadata(list(mapped_data_df.columns))
+    output_qmeta_path = 'data/output/question_texts.parquet'
+    qmeta_df.to_parquet(output_qmeta_path, index=False)
+    print(f"Saved question metadata to {output_qmeta_path} ({len(qmeta_df)} rows)")
     
     # Load to PostgreSQL
     print("\n=== LOADING TO POSTGRESQL ===")
     try:
         load_postgres(output_cleaned_path, table_name='satisfaction_2016_cleaned')
-        print("Successfully loaded data to PostgreSQL!")
+        # Load question metadata as a separate lookup table
+        load_postgres(output_qmeta_path, table_name='question_texts')
+        # Load aggregated hospital scores CSV
+        load_postgres_csv('data/output/hospital_scores.csv', table_name='hospital_scores')
+        # Create a readable view with aliased column headers
+        create_readable_view(
+            source_table='satisfaction_2016_cleaned',
+            view_name='vw_satisfaction_readable',
+        )
+        print("Successfully loaded data and metadata to PostgreSQL and created readable view!")
     except Exception as e:
         print(f"Warning: Could not load to PostgreSQL: {e}")
         print("Data has been saved to parquet file and can be loaded later.")

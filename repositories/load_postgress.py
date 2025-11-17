@@ -45,3 +45,26 @@ def load_postgres(parquet_file_path: str, table_name: str = "satisfaction_data")
         df.to_sql(table_name, connection, if_exists='replace', index=False)
     
     print(f"Successfully loaded {len(df)} rows to table '{table_name}'")
+
+
+def load_postgres_csv(csv_file_path: str, table_name: str) -> None:
+    """Load data from a CSV file into PostgreSQL.
+
+    Args:
+        csv_file_path: Path to the CSV file
+        table_name: Name of the table to create/replace in PostgreSQL
+    """
+    print(f"Loading data from {csv_file_path} to PostgreSQL table '{table_name}'...")
+
+    # Read the CSV file
+    df = pd.read_csv(csv_file_path)
+    print(f"Read {len(df)} rows from csv file")
+
+    # Get the database engine
+    engine = get_postgres_engine()
+
+    # Load data to PostgreSQL (replace if table exists)
+    with engine.connect() as connection:
+        df.to_sql(table_name, connection, if_exists='replace', index=False)
+
+    print(f"Successfully loaded {len(df)} rows to table '{table_name}'")
