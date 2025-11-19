@@ -23,6 +23,60 @@ def main():
     data_df = pd.read_parquet(output_parquet_path)
     print(f"Loaded {len(data_df)} rows from {output_parquet_path}")
     
+    # Data Exploration
+    print("\n=== DATA EXPLORATION (RAW) ===")
+    print(f"\nDataset Shape: {data_df.shape[0]} rows × {data_df.shape[1]} columns")
+    
+    # Data types summary
+    print("\n--- Data Types Summary ---")
+    dtype_counts = data_df.dtypes.value_counts()
+    for dtype, count in dtype_counts.items():
+        print(f"  {dtype}: {count} columns")
+    
+    # Missing values analysis
+    print("\n--- Missing Values Analysis ---")
+    null_counts = data_df.isnull().sum()
+    null_cols = null_counts[null_counts > 0].sort_values(ascending=False)
+    if len(null_cols) > 0:
+        print(f"  Columns with missing values: {len(null_cols)}")
+        print(f"  Total missing values: {null_counts.sum()}")
+        print(f"  Missing percentage: {(null_counts.sum() / (data_df.shape[0] * data_df.shape[1]) * 100):.2f}%")
+        print("\n  Top 10 columns with most nulls:")
+        for col, null_count in null_cols.head(10).items():
+            pct = (null_count / len(data_df)) * 100
+            print(f"    {col}: {null_count} ({pct:.1f}%)")
+    else:
+        print("  No missing values found")
+    
+    # Numeric columns statistics
+    numeric_cols = data_df.select_dtypes(include=['int64', 'float64']).columns
+    print(f"\n--- Numeric Columns ({len(numeric_cols)} total) ---")
+    if len(numeric_cols) > 0:
+        print("  Sample statistics for first 5 numeric columns:")
+        for col in numeric_cols[:5]:
+            print(f"    {col}: min={data_df[col].min():.2f}, max={data_df[col].max():.2f}, "
+                  f"mean={data_df[col].mean():.2f}, median={data_df[col].median():.2f}")
+    
+    # Categorical columns
+    object_cols = data_df.select_dtypes(include=['object']).columns
+    print(f"\n--- Categorical Columns ({len(object_cols)} total) ---")
+    if len(object_cols) > 0:
+        print("  Sample unique value counts for first 5 categorical columns:")
+        for col in object_cols[:5]:
+            unique_count = data_df[col].nunique()
+            print(f"    {col}: {unique_count} unique values")
+    
+    # Duplicate rows
+    duplicate_count = data_df.duplicated().sum()
+    print(f"\n--- Data Quality ---")
+    print(f"  Duplicate rows: {duplicate_count}")
+    if duplicate_count > 0:
+        print(f"  Duplicate percentage: {(duplicate_count / len(data_df) * 100):.2f}%")
+    
+    # Memory usage
+    memory_mb = data_df.memory_usage(deep=True).sum() / 1024 / 1024
+    print(f"  Memory usage: {memory_mb:.2f} MB")
+    
     print("\n=== TRANSFORMATION PHASE ===")
     # Clean the data
     cleaned_data_df = clean_data(data_df)
