@@ -40,7 +40,20 @@ pgAdmin: http://localhost:8081  (admin@admin.com / admin)
 python main.py
 ```
 
-What it does:
+### Launch Dashboard
+
+After running the ETL, visualize the data:
+```bash
+streamlit run dashboard.py
+```
+
+This opens an interactive dashboard at http://localhost:8501 with:
+- Overview: Key metrics and distribution charts
+- Hospital Comparison: Compare up to 5 hospitals side-by-side
+- Question Analysis: Deep dive into individual survey questions
+- Data Explorer: Browse and filter the raw data
+
+What the ETL does:
 - Extracts: reads data/raw/satisfaction_2016_data_*.xlsx → data/output/satisfaction_2016_data.parquet
 - Transforms: cleans, applies mappings; saves data/output/cleaned_data.parquet
 - Aggregates: saves data/output/hospital_scores.csv
